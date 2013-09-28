@@ -1,7 +1,6 @@
 require_dependency 'spree/calculator'
 module Spree
-  class Calculator < ActiveRecord::Base
-      class Avatax < Calculator
+  class Calculator::Avatax < Spree::Calculator
         def self.description
           I18n.t(:avalara_tax)
         end
@@ -28,7 +27,7 @@ module Spree
               Avalara.password = AvataxConfig.password
               Avalara.username = AvataxConfig.username
               Avalara.endpoint = AvataxConfig.endpoint
-              
+
               matched_line_items = order.line_items.select do |line_item|
                 line_item.product.tax_category == rate.tax_category
               end
@@ -114,5 +113,4 @@ module Spree
             round_to_two_places(total - ( total / (1 + rate.amount) ) )
           end
        end
-   end
 end

@@ -1,22 +1,6 @@
 module Spree
   Order.class_eval do
-    def finalize!
-      touch :completed_at
-      InventoryUnit.assign_opening_inventory(self)
-      # lock any optional adjustments (coupon promotions, etc.)
-      adjustments.optional.each { |adjustment| adjustment.update_column('locked', true) }
-      deliver_order_confirmation_email
-      #Commit Avatax Sales Invoice
-      self.commit_avatax_invoice
-
-      self.state_changes.create({
-        :previous_state => 'cart',
-        :next_state     => 'complete',
-        :name           => 'order' ,
-        :user_id        => (User.respond_to?(:current) && User.current.try(:id)) || self.user_id
-      }, :without_protection => true)
-
-    end
+      Spree::Order.state_machine.after_transition :to => :complete, :do => :commit_avatax_invoice
 
       #TODO-  Avatax Refunds!
 
@@ -74,7 +58,6 @@ module Spree
               logger.debug invoice.to_s
 
               invoice_tax = Avalara.get_tax(invoice)
-              
               #Log Response
               logger.debug 'Avatax Response - '
               logger.debug invoice_tax.to_s

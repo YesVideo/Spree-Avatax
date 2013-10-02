@@ -62,7 +62,6 @@ module Avalara
       :query => { :saleamount => sales_amount },
       :basic_auth => authentication
     )
-
     return case response.code
       when 200..299
         Response::TaxDetail.new(response)

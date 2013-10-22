@@ -90,6 +90,8 @@ module Spree
                 line_item.product.tax_category == rate.tax_category
               end
               line_items_total = matched_line_items.sum(&:total)
+              credits = order.adjustments.select {|a| a.amount < 0}
+              line_items_total += (credits.sum &:amount)
               round_to_two_places(line_items_total * rate.amount)
             end
           end

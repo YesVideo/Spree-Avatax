@@ -77,7 +77,11 @@ module Spree
 
       invoice_tax = Avalara.get_tax(invoice)
 
-      order.update_column(:tax_rate, BigDecimal(invoice_tax.total_tax.to_f / line_amount)) if order.respond_to?(:tax_rate)
+      if order.respond_to?(:tax_rate)
+        tot_tax = invoice_tax.total_tax.to_f / line_amount
+        tot_tax = 0 if tot_tax.is_a?(Float) && tot_tax.nan?
+        order.update_column(:tax_rate, BigDecimal(tot_tax, 2))
+      end
 
       #Log Response
       logger.debug invoice_tax.to_s

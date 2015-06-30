@@ -1,8 +1,6 @@
 module Spree
   LineItem.class_eval do
 
-    attr_accessor :tax_rate
-
     def avataxable
       #default response
       response = false

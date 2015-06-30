@@ -29,15 +29,11 @@ module Spree
 
     def compute_line_item(line_item)
       return 0 unless (line_item.product.tax_category == rate.tax_category) && line_item.order.ship_address.present?
-      rate = nil
-
-      if line_item_with_rate = line_item.order.line_items.detect { |li| li.tax_rate.present? }
-        rate = line_item_with_rate.tax_rate
-      end
-
       line_amount = line_item.price * line_item.quantity
+      order       = line_item.order
+      tax_rate    = order.respond_to?(:tax_rate) ? order.tax_rate : nil
 
-      return BigDecimal.new(line_amount * rate) if rate
+      return BigDecimal.new(line_amount * tax_rate) if tax_rate
 
       credits = line_item.adjustments.select{|a| a.amount < 0}
       discount = - credits.sum(&:amount)
@@ -55,7 +51,6 @@ module Spree
         discounted: true
       )
 
-      order = line_item.order
       address = order.ship_address
       invoice_address = Avalara::Request::Address.new(
         address_code: '1',
@@ -82,7 +77,7 @@ module Spree
 
       invoice_tax = Avalara.get_tax(invoice)
 
-      line_item.tax_rate = BigDecimal(invoice_tax.total_tax.to_f / line_amount)
+      order.update_column(:tax_rate, BigDecimal(invoice_tax.total_tax.to_f / line_amount)) if order.respond_to?(:tax_rate)
 
       #Log Response
       logger.debug invoice_tax.to_s

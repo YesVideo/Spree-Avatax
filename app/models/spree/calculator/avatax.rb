@@ -31,18 +31,16 @@ module Spree
       return 0 unless (line_item.product.tax_category == rate.tax_category) && line_item.order.ship_address.present?
       rate = nil
 
-      if line_item_with_rate = line_item.order.line_items.detect { |li| li.tax_rate.present? && li.tax_rate.to_f > 0 }
+      if line_item_with_rate = line_item.order.line_items.detect { |li| li.tax_rate.present? }
         rate = line_item_with_rate.tax_rate
       end
 
-      credits = line_item.adjustments.select{|a| a.amount < 0}
-      discount = - credits.sum(&:amount)
-
       line_amount = line_item.price * line_item.quantity
 
-      if rate
-        return BigDecimal.new(line_amount * rate)
-      end
+      return BigDecimal.new(line_amount * rate) if rate
+
+      credits = line_item.adjustments.select{|a| a.amount < 0}
+      discount = - credits.sum(&:amount)
 
       Avalara.password = AvataxConfig.password
       Avalara.username = AvataxConfig.username

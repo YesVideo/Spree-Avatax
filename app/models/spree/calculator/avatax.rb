@@ -80,7 +80,11 @@ module Spree
       if order.respond_to?(:tax_rate)
         tot_tax = invoice_tax.total_tax.to_f / line_amount
         tot_tax = 0 if tot_tax.is_a?(Float) && tot_tax.nan?
-        order.update_column(:tax_rate, BigDecimal(tot_tax, 2))
+        begin
+          order.update_column(:tax_rate, BigDecimal(tot_tax, 2))
+        rescue Exception => e
+          logger.fatal(e)
+        end
       end
 
       #Log Response

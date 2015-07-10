@@ -33,7 +33,7 @@ module Spree
       order       = line_item.order
       tax_rate    = order.respond_to?(:tax_rate) ? order.tax_rate : nil
 
-      return BigDecimal.new(line_amount * tax_rate) if tax_rate
+      return  BigDecimal.new((line_amount * tax_rate).to_f, 4) if tax_rate
 
       credits = line_item.adjustments.select{|a| a.amount < 0}
       discount = - credits.sum(&:amount)
@@ -78,10 +78,17 @@ module Spree
       invoice_tax = Avalara.get_tax(invoice)
 
       if order.respond_to?(:tax_rate)
-        tot_tax = invoice_tax.total_tax.to_f / line_amount
-        tot_tax = 0 if tot_tax.is_a?(Float) && tot_tax.nan?
+        total_tax = invoice_tax.total_tax.to_f
+
+        if line_amount.to_f == 0.0 || total_tax == 0.0
+          tot_rate = 0
+        else
+          tot_rate = (total_tax / line_amount).to_f.round(4)
+          tot_rate = 0 if tot_rate.is_a?(Float) && tot_rate.nan?
+        end
+
         begin
-          order.update_column(:tax_rate, BigDecimal(tot_tax, 2))
+          order.update_column(:tax_rate, BigDecimal(tot_rate, 4))
         rescue Exception => e
           logger.fatal(e)
         end
